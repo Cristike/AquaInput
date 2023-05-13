@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"dev.cristike.aquainput.input"},{"l":"dev.cristike.aquainput.input.enums"},{"l":"dev.cristike.aquainput.manager"},{"l":"dev.cristike.aquainput.request"},{"l":"dev.cristike.aquainput.response"},{"l":"dev.cristike.aquainput.response.enums"}];updateSearchResults();
