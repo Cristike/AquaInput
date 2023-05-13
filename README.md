@@ -29,7 +29,7 @@ new version of Aqua is released and also shade it into your plugin.
 
 # Documentation
 
-In order to understand the tool better, you can check out the [docs](https://cristike.github.io/Aqua/).
+In order to understand the tool better, you can check out the [docs](https://cristike.github.io/AquaInput/).
 
 # Example
 
