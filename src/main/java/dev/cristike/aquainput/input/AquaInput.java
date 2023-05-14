@@ -37,6 +37,7 @@ public abstract class AquaInput {
     private final EnumSet<InputFlag> flags = EnumSet.noneOf(InputFlag.class);
     private List<String> allowedCommands = new ArrayList<>();
     private int attempts = -1;
+    private int timeout = -1;
 
     /**
      * Checks if the given input is valid.
@@ -47,13 +48,32 @@ public abstract class AquaInput {
 
     /**
      * Sends, if present, the message of the given type to the player.
+     * The following placeholders can be used: {player}, {attempts}
      *
      * @param type the message type
      * @param player the player
      * */
     public final void sendMessage(@NotNull InputMessage type, @NotNull Player player) {
         if (!messages.containsKey(type)) return;
-        player.sendMessage(messages.get(type));
+        player.sendMessage(messages.get(type)
+                .replace("{player}", player.getName())
+                .replace("{attempts}", String.valueOf(attempts)));
+    }
+
+    /**
+     * Sends, if present, the message of the given type to the player.
+     * The following placeholders can be used: {player}, {attempts}, {input}
+     *
+     * @param type the message type
+     * @param player the player
+     * @param input the input
+     * */
+    public final void sendMessage(@NotNull InputMessage type, @NotNull Player player, @NotNull String input) {
+        if (!messages.containsKey(type)) return;
+        player.sendMessage(messages.get(type)
+                .replace("{player}", player.getName())
+                .replace("{attempts}", String.valueOf(attempts))
+                .replace("{input}", input));
     }
 
     /**
@@ -62,8 +82,10 @@ public abstract class AquaInput {
      * @param type the message type
      * @param message the message
      * */
-    public final void setMessage(@NotNull InputMessage type, @NotNull String message) {
+    @NotNull
+    public final AquaInput setMessage(@NotNull InputMessage type, @NotNull String message) {
         messages.put(type, message);
+        return this;
     }
 
     /**
@@ -81,8 +103,10 @@ public abstract class AquaInput {
      *
      * @param flags the flags
      * */
-    public final void setFlags(@NotNull InputFlag ... flags) {
+    @NotNull
+    public final AquaInput setFlags(@NotNull InputFlag ... flags) {
         this.flags.addAll(Arrays.asList(flags));
+        return this;
     }
 
     /**
@@ -100,8 +124,10 @@ public abstract class AquaInput {
      *
      * @param allowedCommands the commands
      * */
-    public final void setAllowedCommands(@NotNull List<String> allowedCommands) {
+    @NotNull
+    public final AquaInput setAllowedCommands(@NotNull List<String> allowedCommands) {
         this.allowedCommands = allowedCommands;
+        return this;
     }
 
     /**
@@ -109,8 +135,10 @@ public abstract class AquaInput {
      *
      * @param allowedCommands the commands
      * */
-    public final void setAllowedCommands(@NotNull String ... allowedCommands) {
+    @NotNull
+    public final AquaInput setAllowedCommands(@NotNull String ... allowedCommands) {
         this.allowedCommands = Arrays.asList(allowedCommands);
+        return this;
     }
 
     /**
@@ -131,7 +159,50 @@ public abstract class AquaInput {
      *
      * @param attempts the number of attempts
      * */
-    public final void setAttempts(int attempts) {
+    @NotNull
+    public final AquaInput setAttempts(int attempts) {
         this.attempts = attempts;
+        return this;
+    }
+
+    /**
+     * Gets the duration after which the input prompt
+     * will be cancelled.
+     * This duration is in seconds. Any value smaller than
+     * 0 will disable the timeout.
+     *
+     * @return the duration
+     * */
+    public final int getTimeout() {
+        return timeout;
+    }
+
+    /**
+     * Gets the duration after which the input prompt
+     * will be cancelled.
+     * This duration is in seconds. Any value smaller than
+     * 0 will disable the timeout.
+     *
+     * @param timeout  the duration
+     * */
+    @NotNull
+    public final AquaInput setTimeout(int timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
+    /**
+     * Copies the properties of this object in the given
+     * object.
+     *
+     * @param input the object
+     * */
+    public final void copyTo(@NotNull AquaInput input) {
+        messages.forEach(input::setMessage);
+
+        input.setFlags(flags.toArray(InputFlag[]::new));
+        input.setAllowedCommands(allowedCommands.toArray(String[]::new));
+        input.setAttempts(attempts);
+        input.setTimeout(timeout);
     }
 }

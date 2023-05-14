@@ -26,5 +26,5 @@ package dev.cristike.aquainput.response.enums;
  * An enum of the possible response status of an input prompt.
  * */
 public enum InputStatus {
-    SUCCESS, FAILED_ATTEMPTS, PLAYER_QUIT, PLAYER_DEATH
+    SUCCESS, TIMEOUT, FAILED_ATTEMPTS, PLAYER_QUIT, PLAYER_DEATH
 }

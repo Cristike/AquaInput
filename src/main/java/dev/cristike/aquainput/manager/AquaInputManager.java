@@ -23,8 +23,11 @@
 package dev.cristike.aquainput.manager;
 
 import dev.cristike.aquainput.input.AquaInput;
+import dev.cristike.aquainput.input.enums.InputMessage;
 import dev.cristike.aquainput.request.AquaInputRequest;
 import dev.cristike.aquainput.response.AquaInputResponse;
+import dev.cristike.aquainput.response.enums.InputStatus;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,17 +57,50 @@ public class AquaInputManager {
                                                                    @NotNull AquaInput input) {
         if (AquaInputManager.plugin == null) initialize(plugin);
         Queue<AquaInputRequest> queue = requestsQueue.computeIfAbsent(uuid, k -> new LinkedList<>());
-        queue.add(new AquaInputRequest(input));
+        AquaInputRequest request = new AquaInputRequest(input);
 
-        return queue.element().getFuture();
+        queue.add(request);
+        if (queue.size() == 1) {
+            sendInputPromptMessage(uuid, input);
+            initializeInputTimeout(uuid, request);
+        }
+
+        return request.getFuture();
     }
 
+    /* Initializes the tool for the hosting plugin. */
+    private static void initialize(@NotNull JavaPlugin plugin) {
+        AquaInputManager.plugin = plugin;
+        plugin.getServer().getPluginManager().registerEvents(new EventsListener(), plugin);
+    }
+
+    /* Sends the prompt message to the player. */
+    private static void sendInputPromptMessage(@NotNull UUID uuid, @NotNull AquaInput input) {
+        Player player = plugin.getServer().getPlayer(uuid);
+        if (player != null) input.sendMessage(InputMessage.PROMPT, player);
+    }
+
+    /* Initializes the timeout task for the input request.  */
+    private static void initializeInputTimeout(@NotNull UUID uuid, @NotNull AquaInputRequest request) {
+        if (request.getInput().getTimeout() < 0) return;
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!requestsQueue.containsKey(uuid)) return;
+            Queue<AquaInputRequest> requests = requestsQueue.get(uuid);
+
+            if (requests.element() != request) return;
+            completeCurrentRequest(uuid, new AquaInputResponse(InputStatus.TIMEOUT, ""));
+        }, request.getInput().getTimeout() * 20L);
+    }
+
+    /* Gets the current head of the input requests queue. */
     @Nullable
     protected static AquaInput getCurrentRequest(@NotNull UUID uuid) {
         if (!requestsQueue.containsKey(uuid)) return null;
         return requestsQueue.get(uuid).element().getInput();
     }
 
+    /* Completes the CompletableFuture of the current head of the input requests queue. */
     protected static void completeCurrentRequest(@NotNull UUID uuid, @NotNull AquaInputResponse response) {
         Queue<AquaInputRequest> requests = requestsQueue.get(uuid);
 
@@ -72,14 +108,22 @@ public class AquaInputManager {
         requests.remove();
 
         if (requests.isEmpty()) requestsQueue.remove(uuid);
+        else {
+            sendInputPromptMessage(uuid, requests.element().getInput());
+            initializeInputTimeout(uuid, requests.element());
+        }
     }
 
+    /* Completes all the CompletableFuture from the input requests queue. */
     protected static void completeAllRequests(@NotNull UUID uuid, @NotNull AquaInputResponse response) {
-        requestsQueue.get(uuid).forEach(request -> completeCurrentRequest(uuid, response));
+        if (!requestsQueue.containsKey(uuid)) return;
+
+        requestsQueue.get(uuid).forEach(request -> request.getFuture().complete(response));
+        requestsQueue.remove(uuid);
     }
 
-    private static void initialize(@NotNull JavaPlugin plugin) {
-        AquaInputManager.plugin = plugin;
-        plugin.getServer().getPluginManager().registerEvents(new EventsListener(), plugin);
+    /* Clears all the input requests without completing them. */
+    protected static void clearAllRequests(@NotNull UUID uuid) {
+        requestsQueue.remove(uuid);
     }
 }

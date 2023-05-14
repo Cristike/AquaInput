@@ -41,7 +41,8 @@ import org.bukkit.event.player.*;
  * */
 public class EventsListener implements Listener {
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    /* Gets the input from chat, filters it and possibly completes the input request. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
         AquaInput input = AquaInputManager.getCurrentRequest(player.getUniqueId());
@@ -50,7 +51,7 @@ public class EventsListener implements Listener {
         event.setCancelled(true);
 
         if (input.isValidInput(event.getMessage())) {
-            input.sendMessage(InputMessage.SUCCESS, player);
+            input.sendMessage(InputMessage.SUCCESS, player, event.getMessage());
             AquaInputManager.completeCurrentRequest(
                     player.getUniqueId(),
                     new AquaInputResponse(InputStatus.SUCCESS, event.getMessage()));
@@ -71,21 +72,23 @@ public class EventsListener implements Listener {
         input.sendMessage(InputMessage.INVALID_INPUT, player);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    /* Handles the case when commands are not allowed. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
         AquaInput input = AquaInputManager.getCurrentRequest(player.getUniqueId());
 
         if (input == null) return;
         if (!input.hasFlag(InputFlag.DISABLE_COMMANDS)) return;
-        String command = event.getMessage().split(" ")[0];
+        String command = event.getMessage().substring(1).split(" ")[0];
 
         if (input.isCommandAllowed(command)) return;
-        input.sendMessage(InputMessage.DISABLED_COMMANDS, player);
+        input.sendMessage(InputMessage.DISABLED_COMMANDS, player, command);
         event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    /* Handles the case when movement is not allowed. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
         if (event.getTo() == null) return;
         Player player = event.getPlayer();
@@ -98,7 +101,8 @@ public class EventsListener implements Listener {
         event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    /* Handles the case when interactions are not allowed. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInteraction(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         AquaInput input = AquaInputManager.getCurrentRequest(player.getUniqueId());
@@ -109,7 +113,8 @@ public class EventsListener implements Listener {
         event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    /* Handles the case when interactions are not allowed. */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInteracted(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         AquaInput input = AquaInputManager.getCurrentRequest(player.getUniqueId());
@@ -120,25 +125,25 @@ public class EventsListener implements Listener {
         event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        AquaInput input = AquaInputManager.getCurrentRequest(player.getUniqueId());
+    /* Handles the case when there are somehow input requests for the player when he joins. */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onJoin(PlayerJoinEvent event) {
+        AquaInputManager.clearAllRequests(event.getPlayer().getUniqueId());
+    }
 
-        if (input == null) return;
+    /* Clears the input requests when the player leaves the server. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onQuit(PlayerQuitEvent event) {
         AquaInputManager.completeAllRequests(
-                player.getUniqueId(),
+                event.getPlayer().getUniqueId(),
                 new AquaInputResponse(InputStatus.PLAYER_QUIT, ""));
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onQuit(PlayerDeathEvent event) {
-        Player player = event.getEntity();
-        AquaInput input = AquaInputManager.getCurrentRequest(player.getUniqueId());
-
-        if (input == null) return;
+    /* Clears the input requests when the player dies. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onDeath(PlayerDeathEvent event) {
         AquaInputManager.completeAllRequests(
-                player.getUniqueId(),
-                new AquaInputResponse(InputStatus.PLAYER_DEATH, ""));
+                event.getEntity().getUniqueId(),
+                new AquaInputResponse(InputStatus.PLAYER_QUIT, ""));
     }
 }

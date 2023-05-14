@@ -21,7 +21,7 @@ maven repository locally on your machine.
     <scope>compile</scope>
 </dependency>
 
-<!-- The latest version is 1.0.0 -->
+<!-- The latest version is 1.1.0 -->
 ```
 
 Keep in mind that you'll need to reinstall the repository when a
@@ -69,24 +69,23 @@ into integers for the sake of simplicity, but keep in mind that the input prompt
 response is a String. The code below shows the event handler.
 
 ```java
-    @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        TwoIntegerInput input = new TwoIntegerInput();
+@EventHandler
+public void onJoin(PlayerJoinEvent event) {
+    Player player = event.getPlayer();
+    TwoIntegerInput input = new TwoIntegerInput();
 
-        input.setFlags(InputFlag.DISABLE_MOVEMENT,InputFlag.DISABLE_INTERACTION, InputFlag.DISABLE_COMMANDS);
-        input.setAllowedCommands("msg");
+    input.setFlags(InputFlag.DISABLE_MOVEMENT,InputFlag.DISABLE_INTERACTION, InputFlag.DISABLE_COMMANDS)
+            .setAllowedCommands("msg")
+            .setMessage(InputMessage.INVALID_INPUT, INVALID_INPUT_MESSAGE)
+            .setMessage(InputMessage.DISABLED_COMMANDS, DISABLED_COMMANDS_MESSAGE)
+            .setMessage(InputMessage.DISABLED_INTERACTION, DISABLED_INTERACTION_MESSAGE)
+            .setMessage(InputMessage.SUCCESS, ChatColor.GREEN + "SUCCESS!");
 
-        input.setMessage(InputMessage.INVALID_INPUT, INVALID_INPUT_MESSAGE);
-        input.setMessage(InputMessage.DISABLED_COMMANDS, DISABLED_COMMANDS_MESSAGE);
-        input.setMessage(InputMessage.DISABLED_INTERACTION, DISABLED_INTERACTION_MESSAGE);
-        input.setMessage(InputMessage.SUCCESS, ChatColor.GREEN + "SUCCESS!");
-
-        AquaInputManager.promptInput(plugin, player.getUniqueId(), input).thenAccept(r -> {
-            if (r.status() == InputStatus.SUCCESS)
-                player.sendMessage("INPUT: " + r.value());
-        });
-    }
+    AquaInputManager.promptInput(plugin, player.getUniqueId(), input).thenAccept(r -> {
+        if (r.status() == InputStatus.SUCCESS)
+            player.sendMessage("INPUT: " + r.value());
+    });
+}
 ```
 
 # Contact

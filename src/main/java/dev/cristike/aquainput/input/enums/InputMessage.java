@@ -26,5 +26,5 @@ package dev.cristike.aquainput.input.enums;
  * An enum of the available messages for the input prompt.
  * */
 public enum InputMessage {
-    INVALID_INPUT, DISABLED_COMMANDS, DISABLED_MOVEMENT, DISABLED_INTERACTION, SUCCESS
+    PROMPT, INVALID_INPUT, DISABLED_COMMANDS, DISABLED_MOVEMENT, DISABLED_INTERACTION, SUCCESS
 }
