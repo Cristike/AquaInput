@@ -60,10 +60,8 @@ public class AquaInputManager {
         AquaInputRequest request = new AquaInputRequest(input);
 
         queue.add(request);
-        if (queue.size() == 1) {
-            sendInputPromptMessage(uuid, input);
-            initializeInputTimeout(uuid, request);
-        }
+        if (queue.size() == 1)
+            initializeInputRequest(uuid, request);
 
         return request.getFuture();
     }
@@ -74,23 +72,27 @@ public class AquaInputManager {
         plugin.getServer().getPluginManager().registerEvents(new EventsListener(), plugin);
     }
 
-    /* Sends the prompt message to the player. */
-    private static void sendInputPromptMessage(@NotNull UUID uuid, @NotNull AquaInput input) {
-        Player player = plugin.getServer().getPlayer(uuid);
-        if (player != null) input.sendMessage(InputMessage.PROMPT, player);
-    }
+    /* Initializes the new request with the timeout task and sending the prompt message. */
+    private static void initializeInputRequest(@NotNull UUID uuid, @NotNull AquaInputRequest request) {
+        /* Sending the prompt message. */
+        sendInputMessage(uuid, request.getInput(), InputMessage.PROMPT);
 
-    /* Initializes the timeout task for the input request.  */
-    private static void initializeInputTimeout(@NotNull UUID uuid, @NotNull AquaInputRequest request) {
+        /* Initializing the timeout task. */
         if (request.getInput().getTimeout() < 0) return;
-
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             if (!requestsQueue.containsKey(uuid)) return;
             Queue<AquaInputRequest> requests = requestsQueue.get(uuid);
 
             if (requests.element() != request) return;
+            sendInputMessage(uuid, request.getInput(), InputMessage.TIMEOUT);
             completeCurrentRequest(uuid, new AquaInputResponse(InputStatus.TIMEOUT, ""));
         }, request.getInput().getTimeout() * 20L);
+    }
+    
+    /* Sends the input message to the player with the given unique id if he's online. */
+    private static void sendInputMessage(@NotNull UUID uuid, @NotNull AquaInput input, @NotNull InputMessage message) {
+        Player player = plugin.getServer().getPlayer(uuid);
+        if (player != null) input.sendMessage(message, player);
     }
 
     /* Gets the current head of the input requests queue. */
@@ -108,10 +110,7 @@ public class AquaInputManager {
         requests.remove();
 
         if (requests.isEmpty()) requestsQueue.remove(uuid);
-        else {
-            sendInputPromptMessage(uuid, requests.element().getInput());
-            initializeInputTimeout(uuid, requests.element());
-        }
+        else initializeInputRequest(uuid, requests.element());
     }
 
     /* Completes all the CompletableFuture from the input requests queue. */
